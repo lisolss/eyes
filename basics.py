@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
 import os
 import datetime
 import time
 import pandas as pd
 import logging
+import numpy as np
+import tushare as ts
 
 g_data_path = './data/'
 g_log_path = './'
@@ -16,7 +19,7 @@ def init():
     ch.setLevel(logging.DEBUG)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     fh.setFormatter(formatter)
-    sh.setFormatter(formatter)
+    ch.setFormatter(formatter)
     logger.addHandler(fh)
     logger.addHandler(ch)
     logger.info("Init finished")
@@ -26,7 +29,7 @@ def refresh_k_data(code_list, k = None):
     logger.info("get_k_data start...")
     today = k_date_now()
     for code in code_list:
-        st_name = filename + code + '.csv'
+        st_name = g_data_path + code + '.csv'
         
         logger.debug("path is " + st_name)
         data = None
@@ -42,7 +45,7 @@ def refresh_k_data(code_list, k = None):
         
             logger.debug(csv_latest + " -- " + today)
 
-            data = ts.get_k_data(code, start = csv_latest, end = today ) if (k) else ts.get_hist_data(code, start = csv_latest, end = today )
+            data = ts.get_k_data(code, start = csv_latest, end = today ) if (k == "yes") else ts.get_hist_data(code, start = csv_latest, end = today )
             try:
                 if data.empty or data.shape[0] < 2:
                     logger.debug("Error: did not get the data")
@@ -71,10 +74,9 @@ def refresh_k_data(code_list, k = None):
     
     logger.info("get_k_data Finished")
 
-
 def get_k_list(refresh = True):
     ts_list = ts.get_stock_basics()
-    ts_list.to_csv(filename+'stock_list.cvs' if (refresh)
+    if (refresh == True):ts_list.to_csv(g_data_path+'stock_list.cvs')
     return ts_list.index
 
 def k_date_now(a = None):
@@ -85,7 +87,17 @@ def k_date_now(a = None):
     return today
 
 
-def 
+def format_data_1(arrays, index = None, columns = None):
+    data = zip(*[iter(arrays)]*len(columns))
+    df = pd.DataFrame(data, index=index, columns=columns)
+    try:
+        if df.empty:
+            logger.debug("Error: did not get the format data")
+            return ''
+    except:
+        return ''
+    return df
 
-
+def data_save(filepath, data):
+    data.to_csv(filepath)
 
