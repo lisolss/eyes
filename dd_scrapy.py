@@ -5,23 +5,26 @@ import basics
 import re
 
 """
-colm:   market:sh or sz
-        code: 代码
-        close: 最新价
+colm:   code: 代码
         p_change: 涨幅
-        main_: 主力单
-        sl_: 超大单
-        l_:大单
-        m_:中单
-        s_:小单
-        _m: 量
-        _r: 量比
+        cprice: 收盘价
+        price: 成交均价
+        zyl:折溢率
+        tvol:成交量
+        tval:成交额
+        cjeltszb: 成交额流通市值
+        BUYERNAME: 买方营业部
+        SALESNAME: 卖方营业部
+        RCHANGE1DC: 1日涨幅(上榜后)
+        RCHANGE5DC: 5
+        RCHANGE10DC: 10
+        RCHANGE20DC: 20
 """
 
-#money flow of eastmoney.com 
-class EMMFScrapy(WebScrapy):
-    def __init__(self, token_url, token_reg, url, colm=["market", "code", "close", "p_change", "mian_m", "mail_r", "sl_m", "sl_r", "l_m", "l_r", "m_m", "m_r", "s_m", "s_r"], index = None):
-        self.name = "Money_Flow"
+#大单 of eastmoney.com 
+class EMDDScrapy(WebScrapy):
+    def __init__(self, token_url, token_reg, url, colm=["code", "p_change", "cprice", "price", "zyl", "tvol", "tval", "cjeltszb", "BUYERNAME", "SALESNAME", "RCHANGE1DC", "RCHANGE5DC", "RCHANGE10DC", "RCHANGE20DC"], index = None):
+        self.name = "DaDan"
         self.types = "MU"
         self.token_url = token_url
         self.token_reg = token_reg
@@ -31,13 +34,15 @@ class EMMFScrapy(WebScrapy):
         WebScrapy.__init__(self, self.name, token_url, token_reg, url, self.types, colm, index)
 
     def get_data(self, text, regs='([\d\:\-\.]+),'):
-        data = re.findall(regs, text)
-        try:
-            data = data[1:]
-        except:
-                return False
+        data = re.findall('data\:\[(.+)\]', text)
         
-        return data
+        try:
+            data = '[' + data[0] + ']'
+            data_array = eval(data)
+            return data_array
+        except:
+            return False
+        
 
     def do(self):
         text = self.get_html_text(self.token_url)
@@ -52,5 +57,3 @@ class EMMFScrapy(WebScrapy):
         data = basics.format_data_1(data_array, self.index, self.colm)
         print self.file_path_csv()
         data.to_csv(self.file_path_csv()) 
-
-        
