@@ -98,7 +98,7 @@ print "d = %s" % (cvs_lastest)
 
 from datetime import datetime
 
-dates = ['2011-1-1','2011-2-1','2012-3-1']
+dates = ['2011-2-30','2011-2-1','2012-3-1']
 ts = pd.DataFrame([1,5,7],index=dates, columns=["aaa"])
 #print ts
 print "xxx"
@@ -116,7 +116,10 @@ print "gggg"
 print list(ts)
 a = ts[ts.aaa == ts.aaa.agg(min)]
 print a
-print a.index[0]#.index(ts.aaa.agg(max))
+print a.index[0]
+if a.index[0] < ts.index[1]:
+    print "hahah"
+#.index(ts.aaa.agg(max))
 print len(ts)
 
 #print a.index(ts.aaa.agg(max))

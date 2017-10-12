@@ -38,11 +38,11 @@ print("M finished")
 """
 
 
-dk = KAs(['600600'], start_time = '2016-04-07', end_time = '2016-12-1')
+dk = KAs(['600602'], start_time = '2016-04-07', end_time = '2016-12-1')
 dk.get_k_data()
 
 #print dk.data[dk.codes[0]]
 
-r = dk.rchange_k_auto(dk.data[dk.codes[0]], delay = 3, average = 8, ignore_max_day = 20)
+r = dk.rchange_k_auto(dk.data[dk.codes[0]], delay = 3, average = 8, ignore_max_day = 20, ignore = 0.05, cut_point = 0.05)
 print "##########RESULT#############3"
 print r
