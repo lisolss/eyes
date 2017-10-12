@@ -29,6 +29,7 @@ res = re.search(pattern, tx)
 print res.group(1)
 """
 
+
 def format_data(arrays, indexs = None, columnss = None):
     data = zip(*[iter(arrays)]*len(columnss))
     df = pd.DataFrame(data, index=indexs, columns=columnss)
@@ -98,7 +99,7 @@ print "d = %s" % (cvs_lastest)
 from datetime import datetime
 
 dates = ['2011-1-1','2011-2-1','2012-3-1']
-ts = pd.DataFrame(['2013-1-1','2013-2-1','2013-3-1'],index=dates, columns=["aaa"])
+ts = pd.DataFrame([1,5,7],index=dates, columns=["aaa"])
 #print ts
 print "xxx"
 #b = ts.set_index(ts['aaa'])
@@ -108,15 +109,25 @@ print "xxx"
 #print a
 p = '2011-2-1'
 p1  = '2013-3-1'
-a = ts[p:None]
+a = ts.iloc[0:1]
+print ts.mean()
 print a
+print "gggg"
+print list(ts)
+a = ts[ts.aaa == ts.aaa.agg(min)]
+print a
+print a.index[0]#.index(ts.aaa.agg(max))
+print len(ts)
 
+#print a.index(ts.aaa.agg(max))
 
+"""
 
 import logging  
 import logging.handlers  
   
 LOG_FILE = 'tst.log'  
+"""
 """
 handler = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes = 1024*1024, backupCount = 5) # 实例化handler   
 fmt = '%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s'  
@@ -130,8 +141,9 @@ logger.setLevel(logging.DEBUG)
   
 logger.info('first info message')  
 logger.debug('first debug message')  
-"""
 
+"""
+"""
 fh = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes = 1024*1024, backupCount = 5)
 formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s')
 
@@ -164,5 +176,7 @@ print a
 b = eval(a)
 print b[0]["test2"]
 
+"""
 
+print 1/2
 
