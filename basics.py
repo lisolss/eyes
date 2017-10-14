@@ -13,7 +13,7 @@ g_data_path = './data/'
 LOG_FILE = './test.log'
 logger = logging.getLogger('slogger')
 
-
+print "你看得见释放空间"
 
 #init log system and parameter
 def init():
@@ -99,7 +99,7 @@ def get_k_list(refresh = True):
 #the parameter mean is what date before a(num) days.
 def k_date_now(a = None):
     now = datetime.datetime.now()
-    if a != None: now = now - datetime.timedelta(eval(a))
+    if a != None: now = now - datetime.timedelta(a)
     today = now.strftime("%Y-%m-%d")
     logger.debug("date is " + today)
     return today
@@ -130,6 +130,9 @@ def get_tick_data(code = None, date = 'today'):
         df = ts.get_today_ticks(i) if date == 'today' else ts.get_tick_data(i, date)
         df.to_csv(st_name)
 
+#format a array like [1,2,3] with the columns key.
+#
+#
 def format_data_1(arrays, index = None, columns = None):
     data = zip(*[iter(arrays)]*len(columns))
     df = pd.DataFrame(data, index=index, columns=columns)
@@ -141,6 +144,49 @@ def format_data_1(arrays, index = None, columns = None):
         return ''
     return df
 
+def format_hash_pd(hash, index = None):
+    df = pd.DataFrame(hash)
+    return df
+
 def data_save(filepath, data):
     data.to_csv(filepath)
 
+def get_classified():
+    a = {}
+    a['industry'] = ts.get_industry_classified()
+    a['concept'] = ts.get_concept_classified()
+    a['area'] = ts.get_area_classified()
+    a['area'] = a['area'].rename(columns = {'area':'c_name'})
+    a['sme'] = pd.DataFrame(ts.get_sme_classified().code, columns=['code'])
+    a['gem'] = pd.DataFrame(ts.get_gem_classified().code, columns=['code'])
+    a['hs300'] = pd.DataFrame(ts.get_hs300s().code, columns=['code'])
+    a['sz50'] = pd.DataFrame(ts.get_sz50s().code, columns=['code'])
+    a['zz500'] = pd.DataFrame(ts.get_zz500s().code, columns=['code'])
+    a['terminated'] = pd.DataFrame(ts.get_terminated().code, columns=['code'])
+    a['suspended'] = pd.DataFrame(ts.get_suspended().code, columns=['code'])
+    
+    return a
+
+def refresh_classified():
+    a = get_classified()
+    print type(a)
+    mkdir(g_data_path + '/' + 'classified')
+
+    big_table = pd.DataFrame()
+    
+    for key,df in a.items():
+        st_name = g_data_path + '/classified/' + key + '.csv'    
+        logger.debug("path is " + st_name)
+        df.to_csv(st_name,encoding='utf-8')
+
+        if key in ['concept', 'area', 'industry']:
+            big_table = big_table.append(df, ignore_index=True)
+        elif key in ['sme', 'gem', 'hs300', 'sz50', 'zz500', 'terminated', 'suspended']:
+            big_table = big_table.append(df, ignore_index=True)
+            big_table = big_table.fillna(key)
+    
+    st_name = g_data_path + '/classified/' + 'big_table' + '.csv'
+    big_table.to_csv(st_name,encoding='utf-8')
+    logger.debug("path is " + st_name)
+    return 0
+            

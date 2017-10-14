@@ -7,7 +7,20 @@ import pandas as pd
 import time
 import datetime
 import numpy as np
+import sys
 
+#print sys.argv[1]
+
+def k_date_now(a = None):
+    now = datetime.datetime.now()
+    print a
+    if a != None: now = now - datetime.timedelta(a)
+    today = now.strftime("%Y-%m-%d")
+    print("date is " + today)
+    return today
+
+print k_date_now(1)
+exit()
 a = "2017-10-09 10:50"
 
 b = a.split(' ')[0]
@@ -99,14 +112,50 @@ print "d = %s" % (cvs_lastest)
 from datetime import datetime
 
 dates = ['2011-2-30','2011-2-1','2012-3-1']
-ts = pd.DataFrame([1,5,7],index=dates, columns=["aaa"])
+ts = pd.DataFrame([1,2,"哈哈",6,7,"哈哈", "aaa", "aaa"],columns=["aaa"])
+
+
+
+ts3 = pd.DataFrame([1,2,5,6,7,8,1,2,3],columns=["bbb"])
+
+ts2 = pd.DataFrame()
+ts2 = ts2.append(ts, ignore_index=True)
+ts2 = ts2.append(ts3, ignore_index=True)
+
+
+ts2.to_csv('./xxx.test',encoding='utf-8')
+ts2 = pd.read_csv('./xxx.test')
+print ts2.aaa
+print ts2[ts2.aaa == 'aaa'].bbb
+
+hs = [{"a":"1", "c":"2"}, {"c":"3", "a":"4"}]
+pd = pd.DataFrame(hs)
+print pd
+
+url = 'http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?token=70f12f2f4f091e459a279469fe49eca5&cmd=&st=TDATE&sr=-1&p=1&ps=50&filter=(SECUCODE=%27600600%27)&js=var%20UObvwgvJ={pages:(tp),data:(x)}&type=DZJYXQ&rt=50253591'
+
+a = re.sub('filter=\(SECUCODE=.*\)\&', '', url)
+print a
+exit()
+del ts2['bbb']
+print ts2
+print 'fffffffffffff'
+
+ts2 = pd.DataFrame(ts2.aaa, columns=['aaa'])
+print ts2
+exit()
+
+ts2 = ts2.fillna(0)
 #print ts
 print "xxx"
+
 #b = ts.set_index(ts['aaa'])
 #b = b.drop(b.index[1])
 #print b
 #a = ts[ts.columns(["aaa"]['2013-2-1':'2013-3-1']]
 #print a
+print ts2
+close()
 p = '2011-2-1'
 p1  = '2013-3-1'
 a = ts.iloc[0:1]

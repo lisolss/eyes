@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import traceback
 import re
 import basics
+from basics import *
 
 class WebScrapy:
 
@@ -16,7 +17,6 @@ class WebScrapy:
         self.index = index
         self.logger = basics.logger
         self.logger.info("WebScarpy init finished with %s" % self.name)
-
 
     def get_html_text(self, url):
         try:
@@ -39,5 +39,8 @@ class WebScrapy:
     def get_data_url(self, url, token):
         return re.sub('\<TOKEN\>', token, url)
 
-    def file_path_csv(self):
-        return './data/%s/%s.csv' % (self.name, basics.k_date_now())
+    def file_path_csv(self, name = None):
+        if name == None: 
+            return '%s/%s/%s.csv' % (g_data_path, self.name, basics.k_date_now())
+        else:
+            return '%s/%s/%s.csv' % (g_data_path, self.name, name)
