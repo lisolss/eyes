@@ -46,11 +46,10 @@ class EMMFScrapy(WebScrapy):
         token_string = self.get_token()
 
         data_url = re.sub('\<TOKEN\>', token_string, self.url)
-        print data_url
         data_text = self.get_html_text(data_url)
         data_array = self.get_data(data_text)
         data = basics.format_data_1(data_array, self.index, self.colm)
-        print self.file_path_csv()
+        
         data.to_csv(self.file_path_csv()) 
 
-        
+    

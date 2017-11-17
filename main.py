@@ -6,6 +6,7 @@ import scrapy
 from basics import *
 from k import KAs
 import sys
+from ticks import TKAs
 from dd_scrapy import EMDDScrapy
 
 
@@ -21,8 +22,10 @@ if sys.argv[1] == 'mf':
 #refresh k data
 if sys.argv[1] == 'rk':
     kl = basics.get_k_list()
-    basics.refresh_k_data(kl, k='yes')
+    basics.refresh_k_data(kl, True)
 
+if sys.argv[1] == 'rkf':
+    kl = basics.get_k_list()
     basics.refresh_k_data(kl, k="yes", k_type = '5')
     print("5 finished")
 
@@ -45,6 +48,7 @@ if sys.argv[1] == 'rk':
 if sys.argv[1] == 'rc':
     basics.refresh_classified()
 
+
 if sys.argv[1] == 'rdd_all':
     logger.info('rdd_all')
     dd = EMDDScrapy()
@@ -57,15 +61,39 @@ if sys.argv[1] == 'rdd_today':
     dd = EMDDScrapy()
     dd.refresh_latest_dd(number = 500)
 
-if sys.argv[1] == 'need change':
+if sys.argv[1] == 'rt':
+    logger.info('refresh ticks')
+    
+    #l = datetime.datetime.now()
+    l = datetime.datetime.strptime("2017-11-13", "%Y-%m-%d")
+    dd = TKAs()
+    for i in range(100):
+        l = l - datetime.timedelta(days=1)
+        today = l.weekday()
+        if today >= 5:
+            continue
+        cvs_lastest = l.strftime("%Y%m%d")
+        dd.refresh_all_ticks(cvs_lastest)
+
+    del dd
+
+
+if sys.argv[1] == 'need_change':
+    get_k_list()
+
+    exit()
     #######Anal
-    dk = KAs(['600602'], start_time = '2016-04-07', end_time = '2016-12-1')
+    dk = KAs(['601992'], start_time = '2017-04-09', end_time = '2017-09-01')
     dk.get_k_data()
 
     #print dk.data[dk.codes[0]]
-
-    r = dk.rchange_k_auto(dk.data[dk.codes[0]], delay = 3, average = 8, ignore_max_day = 20, ignore = 0.05, cut_point = 0.05)
+    r = dk.rchange_k(dk.data[dk.codes[0]], starttime = dk.start_time, endtime = dk.end_time)
+    #r = dk.rchange_k_auto(dk.data[dk.codes[0]], delay = 3, average = 8, ignore_max_day = 20, ignore = 0.05, cut_point = 0.05)
+    r['code'] = dk.codes[0]
     print "##########RESULT#############3"
-    print r
+    for key,value in r.items():
+        print "%s = %s" % (key, value)
+    a = pd.DataFrame([r])
+    print a
 
 

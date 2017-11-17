@@ -28,6 +28,9 @@ _url = 'http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?token=<TO
 _data_reg = 'data\:\[(.+)\]'
 _date_reg = 'filter=\(SECUCODE=.*\)\&'
 
+
+
+
 #大单 of eastmoney.com 
 class EMDDScrapy(WebScrapy):
     def __init__(self, name = 'Dadan', token_url = None, token_reg = None, url = None, colm=None, index = None):
@@ -88,14 +91,62 @@ class EMDDScrapy(WebScrapy):
         logger.info("try to get dd of %s" % (code))
         try:
             data = self.refresh(code, number)
+            data = data.replace('T00\:00\:00', '', regex=True)
             data.to_csv(self.file_path_csv(code))
         except:
+            data = pd.read_csv(self.file_path_csv(code))
+            data = data.replace('T00\:00\:00', '', regex=True)
             logger.debug("ERROR: refresh dd of %s" % (code))
-"""
+        
+        return data
+
+    
+    """
     def refresh_sk_today(self):
         logger.info("try to refresh dd of today")
         data = self.refresh_latest_dd(number = 500)
         
         for i in 
         data.to_csv(st_name, mode = 'a', header=None)
-   """     
+    """     
+
+
+    """
+    Return:
+    time: How many time happen in the time zone
+    timezone: The real time zone
+    """
+    def get_dd(self, code, start_time, timezone = 10, refresh = False, AI = True):
+        logger.info('Get the %s dd data' % (code))
+        data = refresh_st_dd(code, 500) if refresh else pd.read_csv(self.file_path_csv(code))
+        data = data.replace('T00\:00\:00', '', regex=True)
+        data = data.drop_duplicates("TDATE")
+        data = data[data.TDATE <= start_time]
+        r={'happen':0, 'time':pd.DataFrame()}
+        total_count = len(data)
+        first_day  = start_time
+        last_day = (datetime.datetime.strptime(first_day, "%Y-%m-%d") - datetime.timedelta(days=timezone)).strftime("%Y-%m-%d")
+        latest_day = ''
+
+        t = data[(data.TDATE <= first_day) & (data.TDATE >= last_day)]
+        #print t
+        r['time'] = t
+        return r
+
+    def get_latest_dd(self, code, refresh = False, starttime = 0):
+        logger.info('Get the %s latest dd data' % (code))
+        data = self.refresh_st_dd(code, 500) if refresh else pd.read_csv(self.file_path_csv(code))
+        data = data.replace('T00\:00\:00', '', regex=True)
+        if starttime != 0:
+            if len(data[data.TDATE < starttime]) >= 1:
+                data = data[data.TDATE < starttime].TDATE[data[data.TDATE < starttime].TDATE.index[0]]
+            else: 
+                return ""
+        else:
+            data = data.TDATE[0]
+
+        logger.debug('The latest time is %s' % data)
+        #time.sleep(5)
+        return data
+
+

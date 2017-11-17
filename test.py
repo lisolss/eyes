@@ -3,13 +3,127 @@ import requests
 from bs4 import BeautifulSoup
 import traceback
 import re
-import pandas as pd
 import time
 import datetime
-import numpy as np
 import sys
 
+date = datetime.datetime.now().strftime("%Y%m%d")
+cvs_lastest = "2017-08-30"
+l = datetime.datetime.strptime(cvs_lastest, "%Y-%m-%d")
+date = l.strftime("%Y%m%d")
+print date
+
+
+
+l = datetime.datetime.now()
+for i in range(100):
+    l = l - datetime.timedelta(days=1)
+    cvs_lastest = l.strftime("%Y%m%d")
+    print cvs_lastest
+
+exit()
+
+import tushare as ts
+import pandas as pd
+import numpy as np
+
+from collections import OrderedDict
+from pytdx.errors import TdxConnectionError, TdxFunctionCallError
+from pytdx.hq import TdxHq_API, TDXParams
+
+
+api = TdxHq_API(multithread=False, heartbeat=True,auto_retry=True, raise_exception=False)
+api.connect(ip='125.64.41.12')
+"""
+print api.get_security_count(TDXParams.MARKET_SH)
+#stocks = api.get_security_list(0, 100000)
+data = pd.concat([pd.concat([api.to_df(api.get_security_list(j, i * 1000)).assign(sse='sz' if j == 0 else 'sh').set_index(
+            ['code', 'sse'], drop=False) for i in range(int(api.get_security_count(j) / 1000) + 1)], axis=0) for j in range(2)], axis=0)
+data.to_csv('./xxx.csv', encoding='utf-8')
+print data
+
+api.disconnect()
+
+exit()
+for i in range(20):
+    print i
+
+    count = i*1000
+    print count
+    time.sleep(2)
+    dd = api.get_security_list(0, count)
+    for i in dd:
+        print i['code']
+
+api.disconnect()
+
+exit()
+print dd
+for i in dd:
+    for i1 in i:
+        print i1['code']
+    break
+exit()
+api.disconnect()
+assert stocks is not None
+assert type(stocks) is list
+assert len(stocks) > 0
+for i in stocks:
+    print i['code']
+exit()
+print stocks
+exit()"""
+
+print("查询分时行情")
+#data = api.get_transaction_data
+#api.get_history_transaction_data()
+data2 = api.to_df(api.get_history_transaction_data(TDXParams.MARKET_SH, '600600', 0, 0, 20170309))
+for i in range(1000):
+    
+    data = api.to_df(api.get_history_transaction_data(TDXParams.MARKET_SH, '600600', i*100, 100, 20170309))
+    data2 = pd.concat([data, data2])
+    if len(data) <= 99:
+        break
+    #time.sleep(1)
+api.disconnect()
+print data2 
+exit()
+
+#data = api.get_transaction_data(TDXParams.MARKET_SZ, '000001', 0, 30)
+#data = api.get_minute_time_data(TDXParams.MARKET_SH, '600300')
+#data = api.get_history_minute_time_data(TDXParams.MARKET_SH, '600300', 20161209)
+
+assert data is not None
+data = api.to_df(data)
+print type(data)
+print data
+print "finished"
+exit()
+
+df = ts.get_today_ticks('600600')
+print df
+exit()
+
+dates = ['2011-2-30','2011-2-1','2012-3-1']
+ts = pd.DataFrame([1,2,"哈哈",6,7,"哈哈", "aaa", "aaa"],columns=["aaa"])
+
+
+
+ts3 = pd.DataFrame([1,2,5,6,7,8,1,2,3],columns=["bbb"])
+
+ts2 = pd.DataFrame()
+ts2 = ts2.append(ts, ignore_index=True)
+ts2 = ts2.append(ts3, ignore_index=True)
+
+print ts2.drop_duplicates("aaa")
 #print sys.argv[1]
+s = "2017-08-29"
+a = datetime.datetime.strptime(s, "%Y-%m-%d")
+
+b = datetime.datetime.now()
+
+print "tttttttttttttt"
+print (a - b).days
 
 def k_date_now(a = None):
     now = datetime.datetime.now()
@@ -20,6 +134,9 @@ def k_date_now(a = None):
     return today
 
 print k_date_now(1)
+
+print sys.path[0]
+
 exit()
 a = "2017-10-09 10:50"
 
@@ -100,12 +217,16 @@ a = datetime.datetime.strptime(s, "%Y-%m-%d")
 
 b = datetime.datetime.now()
 
+print "tttttttttttttt"
 print (b - a).days
 
 cvs_lastest = "2017-08-30"
-l = datetime.datetime.strptime(cvs_lastest, "%Y-%m-%d")
-l = l + datetime.timedelta(days=1)
-cvs_lastest = l.strftime("%Y-%m-%d")
+
+l = datetime.datetime.now
+for i in range(100):
+    l = l - datetime.timedelta(days=1)
+    cvs_lastest = l.strftime("%Y%m%d")
+    print cvs_lastest
 
 print "d = %s" % (cvs_lastest)
 
