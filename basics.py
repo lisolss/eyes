@@ -19,7 +19,6 @@ g_tmp_path = '/tmp/eyes/tmp'
 LOG_FILE = sys.path[0] + '/test.log'
 logger = logging.getLogger('slogger')
 
-
 #init log system and parameter
 def init():
     fh = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes = 1024*1024, backupCount = 5)
@@ -106,9 +105,14 @@ def get_k_list(refresh = True):
     all_k_list.reset_index('code', 'see')
     all_k_list = all_k_list.iloc[:, [0, -1]]
     ts_list = pd.merge(ts_list, all_k_list, on='code')
-
     if (refresh == True):ts_list.to_csv(g_data_path+'stock_list.cvs')
     return ts_list.code
+
+
+#获取大盘列表
+def get_dp_list(refresh = True):
+    ts_list = ts.get_index()
+    return ts_list
 
 #获取A股的列表
 def get_a_k_list(refresh = True):
@@ -118,7 +122,10 @@ def get_a_k_list(refresh = True):
     all_k_list.reset_index('code', 'see')
     all_k_list = all_k_list.iloc[:, [0, -1]]
     ts_list = pd.merge(ts_list, all_k_list, on='code')
-
+    dp_k = ['000001','000002','000003','000008','000009','000010','000011','000012','000016','000017','000300','399001','399002','399003','399004','399005','399006','399100','399101','399106','399107','399108','399333','399606',]
+    dp_sse = ['sh','sh','sh','sh','sh','sh','sh','sh','sh','sh','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz',]
+    dp_list = pd.DataFrame({'code':dp_k, 'sse':dp_sse})
+    ts_list = ts_list.append(dp_list,ignore_index = True)
     if (refresh == True):ts_list.to_csv(g_data_path+'stock_list.cvs')
     return ts_list
 

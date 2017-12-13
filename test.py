@@ -7,29 +7,42 @@ import time
 import datetime
 import sys
 
-date = datetime.datetime.now().strftime("%Y%m%d")
-cvs_lastest = "2017-08-30"
-l = datetime.datetime.strptime(cvs_lastest, "%Y-%m-%d")
-date = l.strftime("%Y%m%d")
-print date
-
-
-
-l = datetime.datetime.now()
-for i in range(100):
-    l = l - datetime.timedelta(days=1)
-    cvs_lastest = l.strftime("%Y%m%d")
-    print cvs_lastest
-
-exit()
-
 import tushare as ts
 import pandas as pd
 import numpy as np
 
+ts3 = pd.DataFrame({'bbb':[55], 'ccc':[66]})
+
+a = {'bbb':55, 'ccc':66}
+ts3 = ts3.append(a,ignore_index=True)
+print ts3.sum()
+exit()
+ts2 = ts3[1:].reset_index()
+print ts2
+print ts3.sub(ts2)
+
+ticks_info = ticks_info[time >= start_time]
+
+exit()
+
+from classified import Classified
+
+c = Classified()
+print c.get("3D打印")
+exit()
+
+dp_k = ['000001','000002','000003','000008','000009','000010','000011','000012','000016','000017','000300','399001','399002','399003','399004','399005','399006','399100','399101','399106','399107','399108','399333','399606',]
+dp_sse = ['sh','sh','sh','sh','sh','sh','sh','sh','sh','sh','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz',]
+dp_list = pd.DataFrame({'$a':dp_k, '$b':dp_sse})
+dp_list.duplicated
+#dp_list = dp_list.rename(columns = ())
+print dp_list    
+exit()
 from collections import OrderedDict
 from pytdx.errors import TdxConnectionError, TdxFunctionCallError
 from pytdx.hq import TdxHq_API, TDXParams
+
+
 
 
 api = TdxHq_API(multithread=False, heartbeat=True,auto_retry=True, raise_exception=False)

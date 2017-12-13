@@ -10,12 +10,13 @@ import tushare as ts
 from basics import *
 
 class KAs:
-    def __init__(self, code_list = None, start_time = None, end_time = None, filepath = './data/'):
+    def __init__(self, code_list = None, start_time = None, end_time = None, filepath = './data/', inmemory = False):
         self.codes = code_list
         self.path = g_data_path
         self.data = {}
         self.start_time = None if start_time == None else datetime.datetime.strptime(start_time, "%Y-%m-%d")
-
+        self.inmemory = inmemory
+        
         #the end_time value is "yyyy-mm-dd" or "x days"
         if end_time != None:
             if type(end_time) != type(1):
@@ -26,15 +27,19 @@ class KAs:
             self.end_time = None 
         
 
+
     def get_k(self, code, types = 'D'):
         path = "%s/%s/%s_%s.csv" % (g_data_path, code, code, types)
         if not os.path.exists(path):
+            print path
             return False
         data = pd.read_csv(path)
 
         data = data.set_index(data['date'])
-        data = data[self.start_time.strftime("%Y-%m-%d"):self.end_time.strftime("%Y-%m-%d")]
+        if self.inmemory == True:
+            return data
         
+        data = data[self.start_time.strftime("%Y-%m-%d"):self.end_time.strftime("%Y-%m-%d")]
         return data
 
     def get_k_data(self, type='D'):
@@ -68,7 +73,10 @@ class KAs:
         ignore: ignore the wave of 
     """
     def rchange_k_auto(self, k, delay = 1, average = 5, ignore = 0.05, ignore_max_day = 10, up_igonre = 1, cut_point = 0.05, max_ris = 0.05):    
+        if self.inmemory == True:
+            k = k[self.start_time.strftime("%Y-%m-%d"):self.end_time.strftime("%Y-%m-%d")]
         #Get delay top value
+
         total_count = len(k)
         if total_count <= average: return None
         

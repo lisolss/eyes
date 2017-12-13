@@ -2,19 +2,19 @@
 import basics
 import pandas as pd
 from k import KAs
-import * form basics
+from basics import * 
 
 class Classified():
     def __init__(self):
         self.st_name = g_data_path + '/classified/big_table.csv'
-        self.big_table = pd.read_csv(self.st_name)
+        print self.st_name
+        self.big_table = pd.read_csv(self.st_name, dtype={'code': str})
 
-    #get classified data by code
     def get(self, code):
         if code.isdigit():
-            return self.big_table(self.code == code).c_name
+            return self.big_table[self.big_table.code == code].c_name
         else:
-            return self.big_table(self.c_name == code).code
+            return self.big_table[self.big_table.c_name == code].code
 
     def get_k(self, c_name):
         
@@ -31,6 +31,4 @@ class Classified():
             vol = vol + data[0]
 
         pass
-
-    def 
     
