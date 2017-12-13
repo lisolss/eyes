@@ -163,15 +163,15 @@ if sys.argv[1] == 'need_change':
     totall_count = len(range_delay) * len(range_average) * len(range_ignore_day) * len(range_igonre) * len(range_cut_point)
     print("The total count is %d, will take about %d minuets" % (totall_count, totall_count * 5))
     time.sleep(30)
-    for i in range(1,2):
+    for i in range_delay:
         delay = i
-        for i1 in range(3,10):
+        for i1 in range_average:
             average = i1
-            for i2 in range(3,7):
+            for i2 in range_ignore_day:
                 ignore_max_day = i2
-                for i3 in map(lambda x:x/100.0, range(4,10)):
+                for i3 in map(lambda x:x/100.0, range_igonre:
                     ignore = i3
-                    for i4 in map(lambda x:x/100.0, range(5,10)):
+                    for i4 in map(lambda x:x/100.0, range_cut_point:
                         cut_point = i4
                         rp = "delay:%s, average:%s, ignore_max_day:%d, ignore:%f, cut_point:%f" % (delay, average, ignore_max_day, ignore, cut_point)
                         rdf = pd.DataFrame([], columns = ['payoff', 'loss', 'payvol', 'loss_vol', 'gap'])

@@ -11,12 +11,9 @@ import tushare as ts
 import pandas as pd
 import numpy as np
 
-ts3 = pd.DataFrame({'bbb':[55], 'ccc':[66]})
+ts3 = pd.DataFrame([],columns=["bbb", 'ccc'])
 
-a = {'bbb':55, 'ccc':66}
-ts3 = ts3.append(a,ignore_index=True)
-print ts3.sum()
-exit()
+print ts3
 ts2 = ts3[1:].reset_index()
 print ts2
 print ts3.sub(ts2)
