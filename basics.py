@@ -12,16 +12,22 @@ import sys
 from collections import OrderedDict
 from pytdx.errors import TdxConnectionError, TdxFunctionCallError
 from pytdx.hq import TdxHq_API, TDXParams
+from pytdx.reader import BlockReader
 
+#g_data_path = sys.path[0] + '/data/'
+#g_data_path = '/root/code/data/'
+#g_tmp_path = '/tmp/eyes/tmp'
 
-g_data_path = sys.path[0] + '/data/'
-g_tmp_path = '/tmp/eyes/tmp'
+g_data_path = 'D:\data'
+g_tmp_path = 'D:\tmp\eyes\tmp'
+
 LOG_FILE = sys.path[0] + '/test.log'
 logger = logging.getLogger('slogger')
 
 #init log system and parameter
-def init():
-    fh = logging.handlers.RotatingFileHandler(LOG_FILE, maxBytes = 1024*1024, backupCount = 5)
+def init(log_file = LOG_FILE):
+    
+    fh = logging.handlers.RotatingFileHandler(log_file, maxBytes = 1024*1024, backupCount = 5)
     formatter = logging.Formatter('%(asctime)s - %(filename)s:%(lineno)s - %(name)s - %(message)s')
 
     ch = logging.StreamHandler()
@@ -44,6 +50,7 @@ ktype: which k data need. include D(daily), W(weekly), M(month), 15, 5, 30, 60
 def refresh_k_data(code_list, k = True, k_type = 'D'):
     logger.info("get_k_data start...")
     today = k_date_now()
+    
     for code in code_list:
         st_name = "%s/%s/%s_%s.csv" % (g_data_path, code, code, k_type)
         mkdir("%s/%s/" % (g_data_path, code))
@@ -51,7 +58,8 @@ def refresh_k_data(code_list, k = True, k_type = 'D'):
         logger.debug("path is " + st_name)
         data = None
         
-        if os.path.exists(st_name):
+        #if os.path.exists(st_name):
+        if False:
             csv_data = pd.read_csv(st_name)
             csv_latest = csv_data.date
             csv_latest = csv_latest.iloc[-1] if not k_type.isdigit() else csv_latest.iloc[-1].split(" ")[0]
@@ -66,7 +74,7 @@ def refresh_k_data(code_list, k = True, k_type = 'D'):
                 continue
         
             logger.debug(csv_latest + " -- " + today)
-
+            #today = today + datetime.timedelta(days=1)
             data = ts.get_k_data(code, start = csv_latest, end = today, ktype=k_type ) if (k == True) else ts.get_hist_data(code, start = csv_latest, end = today, ktype = k_type)
             try:
                 data = data.drop(data.index[0])
@@ -77,11 +85,16 @@ def refresh_k_data(code_list, k = True, k_type = 'D'):
                 continue
             
             data = data.sort_index(ascending=True)
-            data = data.drop(data.index[0])
+            #data = data.drop(data.index[0])
             data.to_csv(st_name, mode = 'a', header=None)
         
         else:
             print "is there"
+            try:
+                os.remove(st_name)
+            except:
+                print "New " + st_name
+
             data = ts.get_k_data(code, ktype=k_type, autype='qfq') if k else ts.get_hist_data(code, ktype=k_type)
             try:
                 if data.empty:
@@ -119,14 +132,16 @@ def get_a_k_list(refresh = True):
     ts_list = ts.get_stock_basics()
     ts_list['code'] = ts_list.index
     all_k_list = get_k_list_tdx()
-    all_k_list.reset_index('code', 'see')
+    all_k_list.reset_index('code', 'sse')
     all_k_list = all_k_list.iloc[:, [0, -1]]
     ts_list = pd.merge(ts_list, all_k_list, on='code')
     dp_k = ['000001','000002','000003','000008','000009','000010','000011','000012','000016','000017','000300','399001','399002','399003','399004','399005','399006','399100','399101','399106','399107','399108','399333','399606',]
     dp_sse = ['sh','sh','sh','sh','sh','sh','sh','sh','sh','sh','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz','sz',]
     dp_list = pd.DataFrame({'code':dp_k, 'sse':dp_sse})
+    
     ts_list = ts_list.append(dp_list,ignore_index = True)
     if (refresh == True):ts_list.to_csv(g_data_path+'stock_list.cvs')
+    
     return ts_list
 
 
@@ -145,9 +160,7 @@ def get_code_detail(code):
     st_name = g_data_path+'stock_list.cvs'
     csv_data = pd.read_csv(st_name)
     csv_data['code'] = csv_data.apply(str)
-    print type(csv_data.code[0])
-    print "xxxxxxxxx"
-    print type(code)
+
     return csv_data[csv_data.code == code]
 
 #The parameter mean is what date before a(num) days.
@@ -208,6 +221,7 @@ def data_save(filepath, data):
 
 #Refresh the classfy data
 def get_classified():
+    
     a = {}
     a['industry'] = ts.get_industry_classified()
     a['concept'] = ts.get_concept_classified()
@@ -218,16 +232,26 @@ def get_classified():
     a['hs300'] = pd.DataFrame(ts.get_hs300s().code, columns=['code'])
     a['sz50'] = pd.DataFrame(ts.get_sz50s().code, columns=['code'])
     a['zz500'] = pd.DataFrame(ts.get_zz500s().code, columns=['code'])
-    a['terminated'] = pd.DataFrame(ts.get_terminated().code, columns=['code'])
-    a['suspended'] = pd.DataFrame(ts.get_suspended().code, columns=['code'])
+    #a['terminated'] = pd.DataFrame(ts.get_terminated().code, columns=['code'])
+    #a['suspended'] = pd.DataFrame(ts.get_suspended().code, columns=['code'])
     
     return a
 
-#Refresh the classify data. and save with cvs file. 
-#Merage all information into Big Table.
-def refresh_classified():
-    a = get_classified()
-    print type(a)
+#Refresh the classfy data
+def get_classified_tdx(data_path = "C:/zd_zxjtzq/T0002/hq_cache/"):
+    a = {}
+    
+    for data in ['block_gn', 'block_fg', 'block_zs']:
+        df= BlockReader().get_df(data_path + data + '.dat')
+        df = df.rename(index=str, columns={"blockname": "c_name"})
+        a[data] = df.drop(columns=['block_type', 'code_index'])
+    return a
+
+
+def refresh_classified_tdx():
+    from_ts = get_classified()
+    from_tdx = get_classified_tdx()
+    a = dict(from_ts, **from_tdx)
     mkdir(g_data_path + '/' + 'classified')
 
     big_table = pd.DataFrame()
@@ -239,7 +263,7 @@ def refresh_classified():
 
         if key in ['concept', 'area', 'industry']:
             big_table = big_table.append(df, ignore_index=True)
-        elif key in ['sme', 'gem', 'hs300', 'sz50', 'zz500', 'terminated', 'suspended']:
+        elif key in ['sme', 'gem', 'block_gn', 'block_fg', 'block_zs', 'hs300', 'sz50', 'zz500']:
             big_table = big_table.append(df, ignore_index=True)
             big_table = big_table.fillna(key)
     

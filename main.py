@@ -8,11 +8,10 @@ from k import KAs
 import sys
 from ticks import TKAs
 from dd_scrapy import EMDDScrapy
-
-
-basics.init()
+import tradeday
 
 if sys.argv[1] == 'mf':
+    basics.init()
     logger.info("start...")
     #refresh money flow
     money_flow = EMMFScrapy("http://data.eastmoney.com/zjlx/detail.html", 'dataurl.*token=(\d|\w+)\{', \
@@ -21,10 +20,14 @@ if sys.argv[1] == 'mf':
 
 #refresh k data
 if sys.argv[1] == 'rk':
+
+    basics.init(log_file = sys.path[0] + '/test_rk.log')
+
     kl = basics.get_k_list()
     basics.refresh_k_data(kl, True)
 
 if sys.argv[1] == 'rkf':
+    basics.init()
     kl = basics.get_k_list()
     basics.refresh_k_data(kl, k="yes", k_type = '5')
     print("5 finished")
@@ -46,10 +49,12 @@ if sys.argv[1] == 'rkf':
 
 #######refresh classified
 if sys.argv[1] == 'rc':
-    basics.refresh_classified()
+    basics.init()
+    basics.refresh_classified_tdx()
 
 
 if sys.argv[1] == 'rdd_all':
+    basics.init()
     logger.info('rdd_all')
     dd = EMDDScrapy()
     cl = basics.get_k_list()
@@ -57,39 +62,55 @@ if sys.argv[1] == 'rdd_all':
         dd.refresh_st_dd(code, number = 500)
 
 if sys.argv[1] == 'rdd_today':
+    basics.init()
     logger.info('rdd_today')
     dd = EMDDScrapy()
     dd.refresh_latest_dd(number = 500)
 
 if sys.argv[1] == 'rttoday':
+    basics.init(log_file = sys.path[0] + '/test_rt.log')
     logger.info('refresh ticks')
     
     l = datetime.datetime.now()
-    #l = datetime.datetime.strptime("2017-11-13", "%Y-%m-%d")
-    dd = TKAs()
-    if l.weekday() >= 5:
-        del dd
-        exit()
-    cvs_lastest = l.strftime("%Y%m%d")
-    dd.refresh_all_ticks(cvs_lastest)
 
+    cvs_lastest = l.strftime("%Y%m%d")
+    if tradeday.is_tradeday(cvs_lastest) == 1:
+        dd = TKAs()
+        dd.refresh_all_ticks(cvs_lastest)
+    
     del dd
+    exit(0)
+    
 
 if sys.argv[1] == 'rt':
+    basics.init(log_file = sys.path[0] + '/test_rt.log')
+
     #l = datetime.datetime.now()
-    l = datetime.datetime.strptime("2017-11-23", "%Y-%m-%d")
+    l = datetime.datetime.strptime("2018-07-26", "%Y-%m-%d")
     dd = TKAs()
-    for i in range(3):
-        l = l - datetime.timedelta(days=1)
-        today = l.weekday()
-        if today >= 5:
-            continue
+    for i in range(10):
+        #today = l.weekday()
+        #if today >= 5:
+        #    l = l - datetime.timedelta(days=1)
+        #    continue
+        
         cvs_lastest = l.strftime("%Y%m%d")
-        dd.refresh_all_ticks(cvs_lastest)
+        if tradeday.is_tradeday(cvs_lastest) == 1:
+            print cvs_lastest
+            dd.refresh_all_ticks(cvs_lastest)
+        l = l - datetime.timedelta(days=1)
 
     del dd
+    exit(0)
 
 if sys.argv[1] == 'test':
+    basics.init()
+    #l = datetime.datetime.now()
+    basics.refresh_classified_tdx()
+
+
+if sys.argv[1] == 'test_old':
+    basics.init()
     #l = datetime.datetime.now()
     l = datetime.datetime.strptime("2017-11-22", "%Y-%m-%d")
     dd = TKAs()
@@ -99,7 +120,7 @@ if sys.argv[1] == 'test':
 
 
 import time
-def test(dk, kl, start_time, end_time, delay = 1, average = 6, ignore_max_day = 6, ignore = 0.05, cut_point = 0.15):
+def back_test(dk, kl, start_time, end_time, delay = 1, average = 6, ignore_max_day = 6, ignore = 0.05, cut_point = 0.15):
     a = 0
     b = 0
     c = 0
@@ -111,6 +132,7 @@ def test(dk, kl, start_time, end_time, delay = 1, average = 6, ignore_max_day = 
         code = kl[k]
         dk.start_time = datetime.datetime.strptime(start_time, "%Y-%m-%d")
         dk.end_time = datetime.datetime.strptime(end_time, "%Y-%m-%d")
+        
         
         if type(dk.data[code]) == type(False):
             print code
@@ -126,7 +148,6 @@ def test(dk, kl, start_time, end_time, delay = 1, average = 6, ignore_max_day = 
         if r['close_rate'] > 0:
             a = a+1
             c = c + (10000*r['close_rate'])
-            
         else:
             b = b+1
             d = d + (10000*r['close_rate'])
@@ -140,9 +161,23 @@ def test(dk, kl, start_time, end_time, delay = 1, average = 6, ignore_max_day = 
     return f
     #exit()
 
+if sys.argv[1] == 'summary_ticks':
+    basics.init()
+    dd = TKAs()
+    dd.summary_all()
+    del dd
+    exit(0)
+
+if sys.argv[1] == 'summary_class':
+    basics.init()
+    dd = TKAs()
+    dd.summary_classified_all()
+    del dd
+    exit(0)
+
 
 import random
-if sys.argv[1] == 'need_change':
+if sys.argv[1] == 'tsystem_check':
     a1=(2016,1,1,0,0,0,0,0,0)
     a2=(2017,8,1,23,59,59,0,0,0)
     df_ret = pd.DataFrame([],columns=["parameter", 'payoff', 'loss', 'payvol', 'loss_vol', 'gap'])
@@ -156,10 +191,10 @@ if sys.argv[1] == 'need_change':
     dk.get_k_data()
 
     range_delay = range(1,2)
-    range_average = range(3,10)
-    range_ignore_day = range(3,7)
-    range_igonre = range(4, 10)
-    range_cut_point = range(5, 10)
+    range_average = range(4,5)
+    range_ignore_day = range(2,4)
+    range_igonre = range(4, 5)
+    range_cut_point = range(5, 7)
     totall_count = len(range_delay) * len(range_average) * len(range_ignore_day) * len(range_igonre) * len(range_cut_point)
     print("The total count is %d, will take about %d minuets" % (totall_count, totall_count * 5))
     time.sleep(30)
@@ -169,9 +204,9 @@ if sys.argv[1] == 'need_change':
             average = i1
             for i2 in range_ignore_day:
                 ignore_max_day = i2
-                for i3 in map(lambda x:x/100.0, range_igonre:
+                for i3 in map(lambda x:x/100.0, range_igonre):
                     ignore = i3
-                    for i4 in map(lambda x:x/100.0, range_cut_point:
+                    for i4 in map(lambda x:x/100.0, range_cut_point):
                         cut_point = i4
                         rp = "delay:%s, average:%s, ignore_max_day:%d, ignore:%f, cut_point:%f" % (delay, average, ignore_max_day, ignore, cut_point)
                         rdf = pd.DataFrame([], columns = ['payoff', 'loss', 'payvol', 'loss_vol', 'gap'])
@@ -205,4 +240,4 @@ if sys.argv[1] == 'need_change':
     a = pd.DataFrame([r])
     print a
 
-
+exit(0)

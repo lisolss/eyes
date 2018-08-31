@@ -12,8 +12,11 @@ import pandas as pd
 import numpy as np
 
 ts3 = pd.DataFrame([],columns=["bbb", 'ccc'])
-
-print ts3
+ts = pd.DataFrame([1,2,"哈哈",6,7,"哈哈", "aaa", "aaa"],columns=["aaa"])
+print ts.aaa.values
+ts = ts.aaa.drop_duplicates().values
+print ts
+exit()
 ts2 = ts3[1:].reset_index()
 print ts2
 print ts3.sub(ts2)

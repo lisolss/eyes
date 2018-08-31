@@ -10,7 +10,7 @@ import tushare as ts
 from basics import *
 
 class KAs:
-    def __init__(self, code_list = None, start_time = None, end_time = None, filepath = './data/', inmemory = False):
+    def __init__(self, code_list = None, start_time = None, end_time = None, inmemory = False):
         self.codes = code_list
         self.path = g_data_path
         self.data = {}
