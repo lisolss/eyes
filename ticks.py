@@ -25,6 +25,7 @@ class TKAs:
         self.api = TdxHq_API(multithread=False, heartbeat=True,auto_retry=True, raise_exception=False)
         self.k_list = get_a_k_list()
         self.api.connect(ip='125.64.41.12')
+
         pass
 
     def __del__(self):
@@ -171,7 +172,24 @@ class TKAs:
 
     #def merge_k_t(self):
 
+    def mearge_ticks(self, timezone):
+        path = g_data_path + "/ticks/"
+        tlist = os.listdir(path)
+        datas = pd.DataFrame()
+        for t in tlist:
+            tpath = path + t
+            ticks_date = datetime.datetime.strptime(t, '%Y%m%d')
+            print ticks_date
+            if ticks_date >
+            data_list = pd.DataFrame([],columns=["date":ticks_date, "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_deal_count_open', 'up_down_vol_close', 'up_down_count_close', 'code'])
+            
 
+            if os.path.exists(tpath + '/summary.csv') == False: continue
+                
+            data = pd.read_csv(tpath + '/summanry.csv', dtype={'code': str})
+            datas.append(data, ignore_index=True)
+
+        return datas
     def summary_all(self):
         path = g_data_path + "/ticks/"
         tlist = os.listdir(path)
