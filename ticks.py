@@ -171,25 +171,60 @@ class TKAs:
         return sp
 
     #def merge_k_t(self):
-
-    def mearge_ticks(self, timezone):
+    #按时间顺序合并ticks的列表
+    def mearge_ticks(self, time_from, time_to):
         path = g_data_path + "/ticks/"
         tlist = os.listdir(path)
         datas = pd.DataFrame()
         for t in tlist:
             tpath = path + t
             ticks_date = datetime.datetime.strptime(t, '%Y%m%d')
+            
+            if (ticks_date < time_from) and (ticks_date > time_to): continue
             print ticks_date
-            if ticks_date >
+            
             data_list = pd.DataFrame([],columns=["date":ticks_date, "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_deal_count_open', 'up_down_vol_close', 'up_down_count_close', 'code'])
             
-
-            if os.path.exists(tpath + '/summary.csv') == False: continue
-                
+            if os.path.exists(tpath + '/summary.csv') == False: 
+                print("%s have not summary.csv" % (tpath))
+                continue
+            
             data = pd.read_csv(tpath + '/summanry.csv', dtype={'code': str})
+
             datas.append(data, ignore_index=True)
 
+        if len(df) < 2: return False
+
         return datas
+
+    #def merge_k_t(self):
+    #按时间顺序合并summary_classified的列表
+    def mearge_ticks(self, time_from, time_to):
+        path = g_data_path + "/ticks/"
+        tlist = os.listdir(path)
+        datas = pd.DataFrame()
+        for t in tlist:
+            tpath = path + t
+            ticks_date = datetime.datetime.strptime(t, '%Y%m%d')
+            
+            if (ticks_date < time_from) and (ticks_date > time_to): continue
+            print ticks_date
+            
+            data_list = pd.DataFrame([],columns=["date":ticks_date, "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_deal_count_open', 'up_down_vol_close', 'up_down_count_close', 'code'])
+            
+            if os.path.exists(tpath + '/summary_classified.csv') == False: 
+                print("%s have not summary_classified.csv" % (tpath))
+                continue
+            
+            data = pd.read_csv(tpath + '/summary_classified.csv', dtype={'code': str})
+
+            datas.append(data, ignore_index=True)
+
+        if len(df) < 2: return False
+
+        return datas
+
+
     def summary_all(self):
         path = g_data_path + "/ticks/"
         tlist = os.listdir(path)
