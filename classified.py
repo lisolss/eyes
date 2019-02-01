@@ -12,7 +12,6 @@ class Classified():
             return None
         self.big_table = pd.read_csv(self.st_name, dtype={'code': str}, encoding='utf-8')
        
-
     def get(self, code):
         if code.isdigit():
             return self.big_table[self.big_table.code == code].c_name
@@ -34,6 +33,7 @@ class Classified():
         return self.big_table.c_name.drop_duplicates().values
 
     def get_k(self, c_name):
+        
 
         pass
 

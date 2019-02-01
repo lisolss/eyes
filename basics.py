@@ -8,6 +8,7 @@ import numpy as np
 import tushare as ts
 import logging.handlers  
 import sys
+import tradeday
 
 from collections import OrderedDict
 from pytdx.errors import TdxConnectionError, TdxFunctionCallError
@@ -104,12 +105,18 @@ def refresh_k_data(code_list, k = True, k_type = 'D'):
                 continue
         
             data = data.sort_index(ascending=True)
+            data['rate'] = (data['close'] - data['close'].shift(1))/data['close'].shift(1)
             data.to_csv(st_name)
         
         logger.debug(st_name + " Updated")
     
     logger.info("get_k_data Finished")
 
+def get_k_list2():
+    pro = ts.pro_api("your token")
+    data = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
+    print data
+    return data
 #获取市场股市列表, 加入市场的信息给通达信用
 def get_k_list(refresh = True):
     ts_list = ts.get_stock_basics()
@@ -119,6 +126,8 @@ def get_k_list(refresh = True):
     all_k_list = all_k_list.iloc[:, [0, -1]]
     ts_list = pd.merge(ts_list, all_k_list, on='code')
     if (refresh == True):ts_list.to_csv(g_data_path+'stock_list.cvs')
+    print ts_list.code
+    
     return ts_list.code
 
 
@@ -153,7 +162,11 @@ def get_k_list_tdx(refresh = True):
     data = pd.concat([pd.concat([api.to_df(api.get_security_list(j, i * 1000)).assign(sse='sz' if j == 0 else 'sh').set_index(
             ['code', 'sse'], drop=False) for i in range(int(api.get_security_count(j) / 1000) + 1)], axis=0) for j in range(2)], axis=0)
     api.disconnect()
+    data = data[((data.code >= '600000') & (data.code <= '603999')) | ((data.code >= '000001') & (data.code <= '009999')) | ((data.code >= '300001') & (data.code <= '309999')) | ((data.code >= '390000') & (data.code <= '399999'))]
+    #print data
+    #time.sleep(999)
     data.to_csv(g_data_path+'stock_list_tdx.cvs', encoding='utf-8')
+    #print data
     return data
 
 def get_code_detail(code):
@@ -167,7 +180,7 @@ def get_code_detail(code):
 def k_date_now(a = 0):
     now = datetime.datetime.now()
 
-    if a != 0: now = now + datetime.timedelta(a)
+    if a != 0: now = now - datetime.timedelta(days=a)
     today = now.strftime("%Y-%m-%d")
     logger.debug("date is " + today)
     return today
@@ -245,8 +258,24 @@ def get_classified_tdx(data_path = "C:/zd_zxjtzq/T0002/hq_cache/"):
         df= BlockReader().get_df(data_path + data + '.dat')
         df = df.rename(index=str, columns={"blockname": "c_name"})
         a[data] = df.drop(columns=['block_type', 'code_index'])
-    return a
+    return a    
 
+def get_limit_up(v):
+    v = v*1.1
+    return float("%.2f" % v)
+
+def get_limit_down(v):
+    v = v*0.9
+    return float("%.2f" % v)
+
+def get_yesterday_k(code, dates):
+    yesterday  = tradeday.get_latest_tradeday(dates)
+    k_info_df = pd.read_csv(k_path, dtype={'code': str})
+    k_before_df = k_info_df[k_info_df.date == yesterday.strftime("%Y-%m-%d")]
+    if len(k_before_df) <= 0:
+        return False
+    
+    return k_before_df
 
 def refresh_classified_tdx():
     from_ts = get_classified()

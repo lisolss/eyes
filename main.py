@@ -4,6 +4,7 @@ from em_scrapy import EMMFScrapy
 import basics
 import scrapy
 from basics import *
+import daily_vol
 from k import KAs
 import sys
 from ticks import TKAs
@@ -24,6 +25,8 @@ if sys.argv[1] == 'rk':
     basics.init(log_file = sys.path[0] + '/test_rk.log')
 
     kl = basics.get_k_list()
+    #kl = basics.get_k_list_tdx()
+    #time.sleep(99)
     basics.refresh_k_data(kl, True)
 
 if sys.argv[1] == 'rkf':
@@ -86,9 +89,9 @@ if sys.argv[1] == 'rt':
     basics.init(log_file = sys.path[0] + '/test_rt.log')
 
     #l = datetime.datetime.now()
-    l = datetime.datetime.strptime("2018-07-26", "%Y-%m-%d")
+    l = datetime.datetime.strptime("2019-01-27", "%Y-%m-%d")
     dd = TKAs()
-    for i in range(10):
+    for i in range(5):
         #today = l.weekday()
         #if today >= 5:
         #    l = l - datetime.timedelta(days=1)
@@ -106,7 +109,8 @@ if sys.argv[1] == 'rt':
 if sys.argv[1] == 'test':
     basics.init()
     #l = datetime.datetime.now()
-    basics.refresh_classified_tdx()
+    #basics.refresh_classified_tdx()
+    
 
 
 if sys.argv[1] == 'test_old':
@@ -167,13 +171,51 @@ if sys.argv[1] == 'summary_ticks':
     dd.summary_all()
     del dd
     exit(0)
-
+ 
 if sys.argv[1] == 'summary_class':
     basics.init()
     dd = TKAs()
     dd.summary_classified_all()
     del dd
     exit(0)
+
+if sys.argv[1] == 'sortself':
+
+    today = datetime.datetime.strptime("2019-01-25", "%Y-%m-%d")
+    fromday = 3
+    ticks_top = 0.2
+    ticks_sort_type = 'rate'
+    ticks_sort_date = '2019-01-25'
+    class_list = "all"
+    ignore_value = 15000
+    time_step = 30
+
+    sort_type = ''
+    
+
+    ##################################
+    if ticks_sort_date == 'today':
+        ticks_sort_date = datetime.datetime.now()
+        ticks_sort_date = ticks_sort_date.strftime("%Y-%m-%d")
+    fromday = today - datetime.timedelta(days=fromday)
+    code_list = daily_vol.get_code_from_class(class_list, ticks_top, ticks_sort_type, ticks_sort_date)
+    print code_list
+    time.sleep(999)
+    sort_data = {}
+    for class_name, codes in code_list:
+        sort_data['class_name'] = get_ticks_summary(codes, fromday, today, ignore_value, time_step)
+    
+    #################################
+    
+    """
+    sort_data.
+
+    for class_name in sort_data:
+        sort_data['class_name'][ticks_sort_type] = 
+    """
+
+
+    
 
 
 import random

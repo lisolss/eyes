@@ -24,7 +24,7 @@ class TKAs:
         self.path = g_data_path + "/ticks/" + today + '/'
         self.api = TdxHq_API(multithread=False, heartbeat=True,auto_retry=True, raise_exception=False)
         self.k_list = get_a_k_list()
-        self.api.connect(ip='125.64.41.12')
+        #self.api.connect(ip='125.64.41.12')
 
         pass
 
@@ -47,7 +47,6 @@ class TKAs:
         df = ts.get_tick_data(code, date)
         df.to_csv(path,encoding='utf-8')
     
-
     def refresh_ticks_tdx(self, code, path, date =  'today'):
         date = datetime.datetime.now().strftime("%Y%m%d") if date == 'today' else date
         self.path = g_data_path + "/ticks/" + date + '/'
@@ -113,7 +112,7 @@ class TKAs:
 
     #输入代码和时间, 提取下面的东西到同一级目录
     #总成交量, 总成交率(和总股本比), 成交次数, 买入成交量, 卖出成交量, 买入卖出比率, 资金流入流出量, 资金流入流入比率, 资金流入流出比率(和股本总量). 资金驱动力(资金流入流出和上涨下跌的比率), 上涨下跌比
-    def summary_classified(self, class_name, date, cf = None):
+    def summary_classified(self, class_name, date, cf = None, ignore_value = 1):
         if cf == None: cf = Classified()
         
         
@@ -129,6 +128,9 @@ class TKAs:
             
         for t in t_list:
             tmp = tmp.append(summary_ticks_data[summary_ticks_data.code == t], ignore_index=True)
+
+        tmp = tmp['up_down'].rank(method="max", ascending=ascend)
+        tmp = tmp[0:int(len(tmp)*ignore_value)]
 
         #print code
         #成交总量
@@ -169,7 +171,22 @@ class TKAs:
         sp['c_name'] = class_name
 
         return sp
-
+    """
+    def average_als(self, datas, col, timezone, average):
+        
+        data = datas[datas.index[timezone - datetime.timedelta(days=average) : timezone]]
+        return data['col'].mean()
+    
+    def average_ticks_sort(self, datas, col, timezone, average):
+        
+        tmps = pd.DataFrame()
+        for k in self.k_list.code:
+            data = datas[datas.code == k]
+            r = data.rolling(window=average)
+            data['rolling'] = r.mean()
+            tmps.append(data)
+    """
+    """
     #def merge_k_t(self):
     #按时间顺序合并ticks的列表
     def mearge_ticks(self, time_from, time_to):
@@ -183,7 +200,7 @@ class TKAs:
             if (ticks_date < time_from) and (ticks_date > time_to): continue
             print ticks_date
             
-            data_list = pd.DataFrame([],columns=["date":ticks_date, "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_deal_count_open', 'up_down_vol_close', 'up_down_count_close', 'code'])
+            data_list = pd.DataFrame([],columns=["date", "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_deal_count_open', 'up_down_vol_close', 'up_down_count_close', 'code'])
             
             if os.path.exists(tpath + '/summary.csv') == False: 
                 print("%s have not summary.csv" % (tpath))
@@ -199,7 +216,7 @@ class TKAs:
 
     #def merge_k_t(self):
     #按时间顺序合并summary_classified的列表
-    def mearge_ticks(self, time_from, time_to):
+    def mearge_class(self, time_from, time_to):
         path = g_data_path + "/ticks/"
         tlist = os.listdir(path)
         datas = pd.DataFrame()
@@ -210,8 +227,9 @@ class TKAs:
             if (ticks_date < time_from) and (ticks_date > time_to): continue
             print ticks_date
             
-            data_list = pd.DataFrame([],columns=["date":ticks_date, "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_deal_count_open', 'up_down_vol_close', 'up_down_count_close', 'code'])
-            
+            data_list = pd.DataFrame([],columns=["date":ticks_date, "c_name", "total_vol", 'vol_rat', 'deal_count', 'buy_count', 'sell_count', 'buy_vol', 'sell_vol', 'buy_sell_vol', 'buy_sell_rate', 'up_down_rate', 'code'])
+            data_list.set_index('date')
+
             if os.path.exists(tpath + '/summary_classified.csv') == False: 
                 print("%s have not summary_classified.csv" % (tpath))
                 continue
@@ -223,7 +241,7 @@ class TKAs:
         if len(df) < 2: return False
 
         return datas
-
+    """
 
     def summary_all(self):
         path = g_data_path + "/ticks/"
@@ -238,8 +256,6 @@ class TKAs:
             yesterday = tradeday.get_latest_tradeday(dates)
             print yesterday
 
-            #time.sleep(5)
-            #print tpath
             print dates
             if os.path.exists(tpath+'/summary.csv') == True: continue
             print tpath+'\summary.csv'
@@ -247,7 +263,7 @@ class TKAs:
             for c in os.listdir(tpath):
                 code = re.findall('(\d+).csv', c)
                 print code[0]
-                ret = self.summary_ticks(code[0], dates, yesterday)
+                ret = self.summary_ticks(code[0], dates, yesterday, ignore_value = 15000)
                 if ret == False: continue
 
                 ret['code'] = code[0]
@@ -267,11 +283,85 @@ class TKAs:
         k_info_df = k_info_df[k_info_df.date == date.strftime("%Y-%m-%d")]
         return k_info_df
 
+    def get_ticks_summary_timezone(self, codes, fromday, today, ignore_value = 15000, time_step = 10):
+        path = g_data_path + "/ticks/als"
+
+        for code in codes:
+            data_list = pd.DataFrame([],columns=["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code'])
+            tpath = path + ("%d-%s-%s-%d-%d-%s" % (code, fromday, today, ignore_value, time_step, ".csv"))
+            print tpath
+            if os.path.exists(tpath) == True: continue
+            
+            als_data = summary_ticks_timezone(code, fromday, today, ignore_value, time_step)
+            if len(als_data) <= 0:
+                print "%d summary have problem" % (code)
+                continue
+            
+            als_data.to_csv(tpath)
+
+        return True
+
+    #timezone format is "20190101"
+    def summary_ticks_timezone(self, code, fromday, today, ignore_value = 15000, time_step = 0):
+        base_info_path = g_data_path + 'stock_list.cvs'
+        base_info_df = pd.read_csv(base_info_path, dtype={'code': str})
+        base_info_df = base_info_df[base_info_df.code == code]
+
+        k_path = '%s/%s/%s_D.csv' % (g_data_path, code, code)
+        if os.path.exists(k_path) == False: return False
+        als_datas_pd = data_list = pd.DataFrame([],columns=["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code'])
+        
+        #Get full data according to timezone
+        for i in range((today - fromday).days):
+            ticks_path = '%s/ticks/%s/%s.csv' % (g_data_path, (today + datetime.timedelta(days = i)).strftime("%Y%m%d"), code)
+            ticks_info = pd.read_csv(ticks_path)
+            ticks_info['days'] = (today + datetime.timedelta(days = i)).strftime("%Y%m%d")
+            ticks_info['vault'] = ticks_info.apply(lambda x: x[x.price] * x[x.vol], axis=1)
+            ticks_info = ticks_info[ticks_info.vault > ignore_value]
+
+            last_als = datetime.datetime.strptime("09:25", "%H:%M").strftime("%H:%M")
+            while True:
+                als_datas = {}
+                timeline = datetime.datetime.strptime(last_als, "%H:%M") + datetime.timedelta(minutes=time_step)
+                timeline = timeline.strftime("%H:%M")
+
+                if (timeline > "11:30") and (timeline < "13:30"):
+                    last_als = timeline
+                    continue
+
+                all_bs = ticks_info[ticks_info.time >= last_als]
+                bs =  all_bs[all_bs.time < timeline]
+
+                if len(bs) <= 0:
+                    if len(all_bs) <= 0:
+                        break
+                    else:
+                        last_als = timeline
+                        continue
+                #["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code']
+                als_data['total_vol'] = bs['vol'].sum()
+                als_data['total_p'] = bs['vault'].sum()
+                als_data['counts'] = len(bs)
+                als_data['buy_counts'] = len(bs[bs.buyorsell == 0])
+                als_data['sell_counts'] = len(bs[bs.buyorsell == 1])
+                als_data['p'] = bs[bs.buyorsell==0]['valut'].sum() - bs[bs.buyorsell == 1]['vault'].sum()
+                als_data['buy_sell_vol'] = bs[bs.buyorsell == 0]['vol'].sum() -  bs[bs.buyorsell == 1]['vol'].sum()
+                als_data['buy_vol'] = bs[bs.buyorsell == 0]['vol'].sum()
+                als_data['sell_vol'] = bs[bs.buyorsell == 1]['vol'].sum()
+                als_data['code'] = code
+                als_data['date'] = ("%s %s" % ((today + datetime.timedelta(days = i)).strftime("%Y%m%d"), timeline))
+                als_datas_pd = als_datas_pd.append(als_data,  ignore_index=True)
+
+                print als_data
+        
+
+            return als_datas_pd
+            
 
 
     #输入代码和时间, 提取下面的东西到同一级目录
     #总成交量, 总成交率(和总股本比), 成交次数, 买入成交量, 卖出成交量, 买入卖出比率, 资金流入流出量, 资金流入流入比率, 资金流入流出比率(和股本总量). 资金驱动力(资金流入流出和上涨下跌的比率), 上涨下跌比
-    def summary_ticks(self, code, date, yesterday):
+    def summary_ticks(self, code, date, yesterday, ignore_value = 0, timezones = 0):
     
         base_info_path = g_data_path + 'stock_list.cvs'
         base_info_df = pd.read_csv(base_info_path, dtype={'code': str})
@@ -287,9 +377,12 @@ class TKAs:
         if len(k_info_df) <= 0 or len(k_before_df) <= 0: return False
         ticks_path = '%s/ticks/%s/%s.csv' % (g_data_path, date.strftime("%Y%m%d"), code)
         ticks_info = pd.read_csv(ticks_path)
-        
+
         if len(ticks_info) <= 2: return False
 
+        ticks_info['vault'] = ticks_info.apply(lambda x: x[x.price] * x[x.vol], axis=1)
+        ticks_info = ticks_info[ticks_info.vault > ignore_value]
+        
         #print code
         #成交总量
         sp = {'total_vol':k_info_df.volume.values[0]}
@@ -333,6 +426,7 @@ class TKAs:
         sp['buy_sell_rate'] = sp['buy_sell_vol']/(base_info_df.outstanding[base_info_df.index[0]] * k_before_df.close[k_before_df.index[0]]*10000)
 
         #上涨下跌比-次数
+        sp['up_down'] = (k_info_df.close[k_before_df.index[0]] - k_before_df.close[k_info_df.index[0]]) / k_before_df.close[k_before_df.index[0]]
         sp['up_down_count_close'] = len(ticks_info[ticks_info.price > k_before_df.close[k_before_df.index[0]]])/len(ticks_info)
         sp['up_down_vol_close'] = ticks_info[ticks_info.price > k_before_df.close[k_before_df.index[0]]]
         if len(sp['up_down_vol_close']) > 1:
@@ -347,12 +441,15 @@ class TKAs:
         sp['up_deal_count_open'] = len(ticks_info[ticks_info.price > k_info_df.open[k_info_df.index[0]]])/len(ticks_info)
         #sp['up_deal_vol_open'] = ticks_info[ticks_info.price > k_info_df.open[k_info_df.index[0]]].sum()/len(ticks_info)
         
+
+
         #资金驱动力##########有作用成交vs无作用成交
         #sp['money_driver'] = self.money_driver(date, code)
         for indexs in ticks_info.index:
             ticks_info.loc[indexs].values[0]
             
         return sp
+
 
 
 """
