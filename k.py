@@ -32,7 +32,7 @@ class KAs:
         path = "%s/%s/%s_%s.csv" % (g_data_path, code, code, types)
         if not os.path.exists(path):
             print path
-            return False
+            return pd.DataFrame()
         data = pd.read_csv(path)
 
         data = data.set_index(data['date'])
@@ -45,7 +45,16 @@ class KAs:
     def get_k_data(self, type='D'):
         for code in self.codes:
             self.data[code] = self.get_k(code, type)
-        
+    
+    def get_k_data_pd(self, type='D'):
+        self.data = pd.DataFrame()
+        for code in self.codes:
+            d = self.get_k(code, type)
+            if len(d) <= 0:
+                continue
+            d['code'] = code
+            self.data = self.data.append(d)
+
     #Get the buy date and value
     def get_buy_date(self, k, delay = 1, max_ris = 0.05):
         total_count = len(k)

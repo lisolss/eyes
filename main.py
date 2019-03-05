@@ -197,13 +197,26 @@ if sys.argv[1] == 'sortself':
     if ticks_sort_date == 'today':
         ticks_sort_date = datetime.datetime.now()
         ticks_sort_date = ticks_sort_date.strftime("%Y-%m-%d")
-    fromday = today - datetime.timedelta(days=fromday)
+    fromday = today - datetime.timedelta(days=(fromday-1))
+    
     code_list = daily_vol.get_code_from_class(class_list, ticks_top, ticks_sort_type, ticks_sort_date)
-    print code_list
-    time.sleep(999)
+
     sort_data = {}
-    for class_name, codes in code_list:
-        sort_data['class_name'] = get_ticks_summary(codes, fromday, today, ignore_value, time_step)
+    dd = TKAs()
+    print "xxxxxxxxxxxxxxxx111"
+    for class_name, codes in code_list.items():
+        print "xxxxxxxxxxxxxxxx2"
+        print class_name
+        print len(codes)
+        sort_data[class_name] = dd.get_ticks_summary_timezone(codes, fromday, today, ignore_value, time_step)
+        #print sort_data[class_name] 
+        
+    for name, dd in sort_data.items():
+
+        print name
+        print dd    
+    print "xxxxxxxxxxxxxxxxxxxxxxxxxppppppppppppppppppppppppppppp"
+    time.sleep(9999)
     
     #################################
     

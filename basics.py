@@ -106,6 +106,8 @@ def refresh_k_data(code_list, k = True, k_type = 'D'):
         
             data = data.sort_index(ascending=True)
             data['rate'] = (data['close'] - data['close'].shift(1))/data['close'].shift(1)
+            data['limit_up'] = data['close'].shift(1)*1.1
+            data['limit_down'] = data['close'].shift(1)*0.9
             data.to_csv(st_name)
         
         logger.debug(st_name + " Updated")
@@ -117,6 +119,7 @@ def get_k_list2():
     data = pro.stock_basic(exchange='', list_status='L', fields='ts_code,symbol,name,area,industry,list_date')
     print data
     return data
+    
 #获取市场股市列表, 加入市场的信息给通达信用
 def get_k_list(refresh = True):
     ts_list = ts.get_stock_basics()
@@ -150,6 +153,7 @@ def get_a_k_list(refresh = True):
     
     ts_list = ts_list.append(dp_list,ignore_index = True)
     if (refresh == True):ts_list.to_csv(g_data_path+'stock_list.cvs')
+    
     
     return ts_list
 
@@ -251,7 +255,7 @@ def get_classified():
     return a
 
 #Refresh the classfy data
-def get_classified_tdx(data_path = "C:/zd_zxjtzq/T0002/hq_cache/"):
+def get_classified_tdx(data_path = "D:/zd_pazq/T0002/hq_cache/"):
     a = {}
     
     for data in ['block_gn', 'block_fg', 'block_zs']:
@@ -292,7 +296,7 @@ def refresh_classified_tdx():
 
         if key in ['concept', 'area', 'industry']:
             big_table = big_table.append(df, ignore_index=True)
-        elif key in ['sme', 'gem', 'block_gn', 'block_fg', 'block_zs', 'hs300', 'sz50', 'zz500']:
+        elif key in ['sme', 'gem', 'block_gn', 'block_fg', 'block_zs']:
             big_table = big_table.append(df, ignore_index=True)
             big_table = big_table.fillna(key)
     

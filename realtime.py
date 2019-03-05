@@ -193,10 +193,10 @@ def realtime(codes):
 
 
 thread.start_new_thread(winsound.Beep, (400, 5000))
-codes = [(0, '002016'), (0, '000005')]
+codes = [(0, '000060'), (0, '000751'), (0, '001872'), (0, '002237'), (1, '600338'), (1, '600497'), (1, '600606'), (1, '603799')]
 config = {'speed_timeing':3, 'refresh':3, 'speed_gap':1}
 
-#realtime(codes)
+realtime(codes)
 
-datas = _init_als_data(codes)
-refresh_ticks_tdx(datas)
+#datas = _init_als_data(codes)
+#refresh_ticks_tdx(datas)

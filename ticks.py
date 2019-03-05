@@ -21,9 +21,15 @@ from pytdx.hq import TdxHq_API, TDXParams
 class TKAs:
     def __init__(self):
         today = datetime.datetime.now().strftime("%Y%m%d")
+        today2 = datetime.datetime.now().strftime("%Y-%m-%d")
         self.path = g_data_path + "/ticks/" + today + '/'
         self.api = TdxHq_API(multithread=False, heartbeat=True,auto_retry=True, raise_exception=False)
         self.k_list = get_a_k_list()
+        ks = k.KAs(self.k_list, start_time = today2, end_time = today2)
+        self.k = ks.get_k_data_pd()
+        base_info_path = g_data_path + 'stock_list.cvs'
+        base_info_df = pd.read_csv(base_info_path, dtype={'code': str})
+        self.baseinfo = base_info_df
         #self.api.connect(ip='125.64.41.12')
 
         pass
@@ -31,6 +37,9 @@ class TKAs:
     def __del__(self):
         self.api.disconnect()
         pass
+    
+    #def _load_ticks_data_pd(codes, fromdate, todate):
+
     
     def __connect_tdx(self):
         self.api = TdxHq_API(multithread=False, heartbeat=True,auto_retry=True, raise_exception=False)
@@ -62,7 +71,10 @@ class TKAs:
             data2 = pd.concat([data, data2])
             if len(data) <= 999:
                 break
-    
+
+        data2['lu'] = self.k.code[code].limit_up
+        data2['ld'] = self.k.code[code].limit_down
+
         data2.to_csv(path, encoding='utf-8')
         return data2
 
@@ -79,7 +91,6 @@ class TKAs:
         for k in self.k_list.code:
             file_path = "%s%s.csv" % (self.path, k)
             self.refresh_ticks_tdx(k, file_path, times)
-
 
     def summary_classified_all(self):
         cf = Classified()
@@ -284,44 +295,49 @@ class TKAs:
         return k_info_df
 
     def get_ticks_summary_timezone(self, codes, fromday, today, ignore_value = 15000, time_step = 10):
-        path = g_data_path + "/ticks/als"
-
-        for code in codes:
+        path = g_data_path + "/ticks/als/"
+        als_data = pd.DataFrame()
+        als_t = []
+        for code in codes.code:
             data_list = pd.DataFrame([],columns=["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code'])
-            tpath = path + ("%d-%s-%s-%d-%d-%s" % (code, fromday, today, ignore_value, time_step, ".csv"))
-            print tpath
-            if os.path.exists(tpath) == True: continue
+            tpath = path + ("%s-%s-%s-%d-%d.csv" % (code, fromday.strftime("%Y-%m-%d"), today.strftime("%Y-%m-%d"), ignore_value, time_step))
+           
+            if os.path.exists(tpath) == True:
+                als_t.append(tpath) 
+                continue
             
-            als_data = summary_ticks_timezone(code, fromday, today, ignore_value, time_step)
+            als_data = self.summary_ticks_timezone(code, fromday, today, ignore_value, time_step)
             if len(als_data) <= 0:
                 print "%d summary have problem" % (code)
                 continue
             
             als_data.to_csv(tpath)
-
-        return True
+            als_t.append(tpath)
+            
+        print als_t
+        
+        return als_t
 
     #timezone format is "20190101"
     def summary_ticks_timezone(self, code, fromday, today, ignore_value = 15000, time_step = 0):
-        base_info_path = g_data_path + 'stock_list.cvs'
-        base_info_df = pd.read_csv(base_info_path, dtype={'code': str})
-        base_info_df = base_info_df[base_info_df.code == code]
 
-        k_path = '%s/%s/%s_D.csv' % (g_data_path, code, code)
-        if os.path.exists(k_path) == False: return False
-        als_datas_pd = data_list = pd.DataFrame([],columns=["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code'])
-        
+        als_datas_pd = pd.DataFrame([],columns=["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code'])
+    
         #Get full data according to timezone
-        for i in range((today - fromday).days):
-            ticks_path = '%s/ticks/%s/%s.csv' % (g_data_path, (today + datetime.timedelta(days = i)).strftime("%Y%m%d"), code)
+        for i in range(((today - fromday).days)+1):
+            ticks_path = '%s/ticks/%s/%s.csv' % (g_data_path, (fromday + datetime.timedelta(days = i)).strftime("%Y%m%d"), code)
             ticks_info = pd.read_csv(ticks_path)
-            ticks_info['days'] = (today + datetime.timedelta(days = i)).strftime("%Y%m%d")
-            ticks_info['vault'] = ticks_info.apply(lambda x: x[x.price] * x[x.vol], axis=1)
-            ticks_info = ticks_info[ticks_info.vault > ignore_value]
 
-            last_als = datetime.datetime.strptime("09:25", "%H:%M").strftime("%H:%M")
+            if len(ticks_info) <= 1:
+                continue
+            ticks_info['days'] = (fromday + datetime.timedelta(days = i)).strftime("%Y%m%d")
+            
+            ticks_info['vault'] = ticks_info['price'] * ticks_info['vol'] * 100
+            ticks_info = ticks_info[ticks_info.vault > ignore_value]
+            
+            last_als = datetime.datetime.strptime("09:30", "%H:%M").strftime("%H:%M")
             while True:
-                als_datas = {}
+                als_data = {}
                 timeline = datetime.datetime.strptime(last_als, "%H:%M") + datetime.timedelta(minutes=time_step)
                 timeline = timeline.strftime("%H:%M")
 
@@ -332,30 +348,34 @@ class TKAs:
                 all_bs = ticks_info[ticks_info.time >= last_als]
                 bs =  all_bs[all_bs.time < timeline]
 
+                
                 if len(bs) <= 0:
                     if len(all_bs) <= 0:
                         break
                     else:
                         last_als = timeline
                         continue
+                
                 #["total_vol", 'total_p', 'counts', 'buy_counts', 'sell_counts', 'p', 'sell_vol', 'buy_vol','buy_sell_vol', 'date', 'code']
                 als_data['total_vol'] = bs['vol'].sum()
                 als_data['total_p'] = bs['vault'].sum()
                 als_data['counts'] = len(bs)
                 als_data['buy_counts'] = len(bs[bs.buyorsell == 0])
                 als_data['sell_counts'] = len(bs[bs.buyorsell == 1])
-                als_data['p'] = bs[bs.buyorsell==0]['valut'].sum() - bs[bs.buyorsell == 1]['vault'].sum()
+
+                als_data['p'] = bs[bs.buyorsell==0].vault.sum() - bs[bs.buyorsell == 1].vault.sum()
                 als_data['buy_sell_vol'] = bs[bs.buyorsell == 0]['vol'].sum() -  bs[bs.buyorsell == 1]['vol'].sum()
-                als_data['buy_vol'] = bs[bs.buyorsell == 0]['vol'].sum()
-                als_data['sell_vol'] = bs[bs.buyorsell == 1]['vol'].sum()
+                als_data['buy_vol'] = bs[bs.buyorsell == 0].vol.sum()
+                als_data['sell_vol'] = bs[bs.buyorsell == 1].vol.sum()
                 als_data['code'] = code
-                als_data['date'] = ("%s %s" % ((today + datetime.timedelta(days = i)).strftime("%Y%m%d"), timeline))
+                als_data['date'] = ("%s %s" % ((fromday + datetime.timedelta(days = i)).strftime("%Y%m%d"), timeline))
                 als_datas_pd = als_datas_pd.append(als_data,  ignore_index=True)
+                last_als = timeline
+                
+        #print als_datas_pd        
+        #time.sleep(5)
 
-                print als_data
-        
-
-            return als_datas_pd
+        return als_datas_pd
             
 
 
@@ -363,9 +383,7 @@ class TKAs:
     #总成交量, 总成交率(和总股本比), 成交次数, 买入成交量, 卖出成交量, 买入卖出比率, 资金流入流出量, 资金流入流入比率, 资金流入流出比率(和股本总量). 资金驱动力(资金流入流出和上涨下跌的比率), 上涨下跌比
     def summary_ticks(self, code, date, yesterday, ignore_value = 0, timezones = 0):
     
-        base_info_path = g_data_path + 'stock_list.cvs'
-        base_info_df = pd.read_csv(base_info_path, dtype={'code': str})
-        base_info_df = base_info_df[base_info_df.code == code]
+        base_info_df = self.base_info[self.base_info.code == code]
 
         k_path = '%s/%s/%s_D.csv' % (g_data_path, code, code)
         if os.path.exists(k_path) == False: return False
@@ -380,7 +398,7 @@ class TKAs:
 
         if len(ticks_info) <= 2: return False
 
-        ticks_info['vault'] = ticks_info.apply(lambda x: x[x.price] * x[x.vol], axis=1)
+        ticks_info['vault'] = ticks_info['price'] * ticks_info['vol'] * 100
         ticks_info = ticks_info[ticks_info.vault > ignore_value]
         
         #print code
